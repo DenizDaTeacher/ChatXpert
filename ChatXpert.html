@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EinwandXpert</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 700px;
+      height: 700px;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-content {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header {
+      font-size: 36px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex-grow: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .input-area button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .input-area button:hover {
+      background-color: #218838;
+    }
+
+    .message {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+
+    .user-message {
+      background-color: #f8d7da;
+      align-self: flex-start;
+      color: #721c24;
+    }
+
+    .bot-message {
+      background-color: #d4edda;
+      align-self: flex-end;
+      color: #155724;
+    }
+
+    .bot-message ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .bot-message li {
+      padding: 12px;
+      margin-bottom: 10px;
+      background-color: #c3e6cb;
+      border-radius: 5px;
+      border-left: 5px solid #28a745;
+      cursor: pointer;
+    }
+
+    .bot-message li:hover {
+      background-color: #b1dfbb;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="header-content">
+    <div class="header">EinwandXpert</div>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="Gib den Kundeneinwand ein..." onkeydown="checkEnter(event)">
+    <button onclick="sendMessage()">Antwortvorschläge anzeigen</button>
+  </div>
+</div>
+
+<script>
+  const savedInputs = [];
+
+  const predefinedResponses = [
+    {
+      keywords: ["teuer", "zu teuer", "kostet viel"],
+      responses: [
+        "Verständlich! Darf ich Ihnen zeigen, was alles im Tarif enthalten ist?",
+        "Lassen Sie uns gemeinsam schauen, ob es noch eine passende Alternative gibt.",
+        "Viele Kunden waren überrascht, wie viel sie tatsächlich sparen können."
+      ]
+    },
+    {
+      keywords: ["keine Zeit", "zu wenig Zeit"],
+      responses: [
+        "Verständlich, viele Kunden sind stark eingebunden. Ich fasse mich ganz kurz – es geht nur um 2 Minuten.",
+        "Ich verstehe, dass es schwer ist, Zeit zu finden. Darf ich zeigen, warum es sich lohnt?",
+        "Klingt nach vollem Kalender! Trotzdem lohnt sich ein kurzer Blick."
+      ]
+    }
+    // ... (weitere Einwände wie gewünscht ergänzbar)
+  ];
+
+  function checkEnter(event) {
+    if (event.key === "Enter") sendMessage();
+  }
+
+  function sendMessage() {
+    const inputField = document.getElementById("userInput");
+    const userInput = inputField.value.trim();
+    if (userInput === "") return;
+
+    appendMessage(userInput, "user-message");
+    savedInputs.push(userInput);  // Eingabe speichern
+    inputField.value = "";
+
+    const botResponses = getResponse(userInput);
+    setTimeout(() => appendBotMessage(botResponses), 500);
+  }
+
+  function appendMessage(text, type) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message " + type;
+    msgDiv.textContent = text;
+    document.getElementById("messages").appendChild(msgDiv);
+    scrollToBottom();
+  }
+
+  function appendBotMessage(responses) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message bot-message";
+    const ul = document.createElement("ul");
+
+    responses.forEach(r => {
+      const li = document.createElement("li");
+      li.textContent = r;
+      ul.appendChild(li);
+    });
+
+    msgDiv.appendChild(ul);
+    document.getElementById("messages").appendChild(msgDiv);
+    scrollToBottom();
+  }
+
+  function getResponse(userInput) {
+    for (const entry of predefinedResponses) {
+      if (entry.keywords.some(k => userInput.toLowerCase().includes(k))) {
+        return entry.responses;
+      }
+    }
+    return ["Diesen Einwand habe ich noch nicht gespeichert – darf ich mehr darüber erfahren?"];
+  }
+
+  function scrollToBottom() {
+    const msgBox = document.getElementById("messages");
+    msgBox.scrollTop = msgBox.scrollHeight;
+  }
+</script>
+
+</body>
+</html>
