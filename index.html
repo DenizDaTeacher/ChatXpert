@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat: Kaufberatung Waschmaschine</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+    #chat {
+      width: 50%;
+      padding: 20px;
+      height: 100vh;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    #agent-input {
+      width: 50%;
+      padding: 20px;
+      background: #ffffff;
+      border-left: 2px solid #ccc;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .message {
+      background: #fff;
+      border-radius: 20px;
+      padding: 10px 15px;
+      margin: 10px 0;
+      max-width: 70%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease-out;
+    }
+    .from-bot {
+      align-self: flex-end;
+      background: #d2ffd2;
+    }
+    .from-user {
+      align-self: flex-start;
+      background: #e0e0ff;
+    }
+    .visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #chat-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .agent-reply {
+      background: #f2f2f2;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+      border-left: 4px solid #4caf50;
+    }
+    #pdf-section {
+      margin-top: 30px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .typing {
+      background: #e0e0ff;
+      border-radius: 20px;
+      padding: 10px 15px;
+      margin: 10px 0;
+      max-width: 50%;
+      font-style: italic;
+      color: #666;
+      opacity: 0.6;
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+    /* Hinweiscontainer Styling */
+    #hinweis-container {
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-width: 90%;
+      margin: 30px auto;
+      font-size: 1.1em;
+      line-height: 1.4;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    #los-gehts-btn {
+      margin-top: 20px;
+      display: none; /* versteckt bis 10 Sekunden vorbei */
+    }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <!-- Hinweis-Container am Anfang -->
+    <div id="hinweis-container">
+      <p><strong>Hinweis zum Ablauf:</strong><br>
+      In Kürze startet hier ein simulierter Kundenchat.</p>
+      <p><strong>Deine Aufgabe:</strong> Antworte auf die Kundenfragen so, wie du es im echten Gespräch tun würdest. Nutze alle dir vertrauten Tools wie die MediaMarkt-Website, um nötige Informationen zu sammeln. <br>
+      Nach deiner Antwort zeigen wir dir eine Musterlösung zur Orientierung.</p>
+      <p>Am Ende kannst du deinen kompletten Chatverlauf als PDF speichern und im SkillHub hochladen.</p>
+      <p><strong>Viel Erfolg und viel Spaß!</strong></p>
+      <p>Gleich geht's los...</p>
+      <button id="los-gehts-btn">Los geht's</button>
+    </div>
+
+    <!-- Der normale Chat-Container bleibt leer und versteckt -->
+    <div id="chat-container" style="display:none; flex-direction: column;"></div>
+  </div>
+  <div id="agent-input" style="display:none;">
+    <h3>Bitte gib deine Antwort auf die letzte Kundenfrage ein:</h3>
+    <div id="agent-replies"></div>
+    <textarea id="agent-text" rows="4" style="width: 100%; margin-top: 50px;" placeholder="Deine Antwort..."></textarea>
+    <button onclick="submitAgentReply()">Antwort speichern & Musterlösung anzeigen</button>
+ <div id="pdf-section" style="display: none;">
+  <p>✅ Der Chat ist beendet. Du kannst nun deinen Verlauf speichern und im SkillHub hochladen.</p>
+  <button onclick="downloadPDF()">📄 Chatverlauf als PDF speichern</button>
+
+  <p style="margin-top: 15px;">
+    🔁 Gehe jetzt zurück in den Moodle-Kurs und lade deine PDF-Datei im Abschnitt <strong>Kundenchat 1</strong> unter der Aufgabe hoch.
+  </p>
+  <button onclick="window.location.href='https://skillhub.moodlecloud.com/mod/assign/view.php?id=105'" style="margin-top: 10px;">
+    📤 PDF im Moodle-Kurs hochladen
+  </button>
+</div>
+
+  </div>
+
+  <script src="https://raw.githack.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.js"></script>
+  <script>
+    const messages = [
+      { text: "Hallo, ich habe die Waschmaschine mit der Art.Nr. 2973058 gesehen. Können Sie mir sagen, ob die was taugt? wie viel Fassungsvermögen hat die Maschine?", from: "user" },
+      { text: "Sehr gerne! Die Waschmaschine hat ein Fassungsvermögen von 6 Kilogramm, was für einen durchschnittlichen Haushalt ausreichend ist. Haben Sie noch eine Frage zu dem Artikel?", from: "bot" },
+      { text: "Super, vielen Dank für die ausführliche Beratung!", from: "user" },
+      { text: "Ja, welche Energieklasse hat die Maschine?", from: "user" },
+      { text: "Die Waschmaschine ist in der Energieeffizienzklasse C, was bedeutet, dass sie durchschnittlich strom- und wassersparend arbeitet. Möchten Sie auch noch Alternativen mit etwas größerem Fassungsvermögen oder einer anderen Energieklasse sehen?", from: "bot" },
+      { text: "Ja, gibt es noch andere Modelle in einem ähnlichen Preisbereich?", from: "user" },
+      { text: "Ja, wir haben noch das Modell HAIER Pro Series 1 Art.Nr. 2958720, welches diese Woche im Angebot ist. Diese hat 7 Kilogramm Fassungsvermögen und eine Energieklasse von A. Dieses Modell ist etwas größer und hat zusätzliche Schnellwaschprogramme.", from: "bot" },
+      { text: "Okay, wie unterscheiden sich die Waschprogramme bei den beiden Maschinen?", from: "user" },
+      { text: "Die Art.Nr. 2973058 bietet Standardprogramme und einen Eco-Modus, während die Pro Series 1 zusätzlich spezielle Programme für Wolle und Sportkleidung hat.", from: "bot" },
+      { text: "Gut, die Pro Maschine von Haier wird's wahrscheinlich dann sein. Ich zeige den gleich noch meiner Frau. Wie sind denn die Liefer- und Montagebedingungen?", from: "user" },
+      { text: "Wir bieten einen Anschlussservice an, bei dem die Maschine direkt an Ihrem Wunsch-Aufstellort geliefert und fachgerecht montiert wird. Dieser Service kann gegen Aufpreis direkt im Bestellvorgang dazugebucht werden.", from: "bot" },
+      { text: "Kann das alte Gerät bei der Lieferung mitgenommen werden?", from: "user" },
+      { text: "Ja, das ist möglich. Bitte geben Sie im Bestellprozess an, wenn Ihr altes Gerät mitgenommen werden soll.", from: "bot" },
+      { text: "Super, vielen Dank für die ausführliche Beratung!", from: "user" },
+      { text: "Sehr gerne! Viel Freude mit Ihrer neuen Waschmaschine. Und wenn Sie noch Fragen haben, sind wir jederzeit für Sie da.", from: "bot" }
+    ];
+
+    const chatContainer = document.getElementById("chat-container");
+    const agentReplies = document.getElementById("agent-replies");
+    const agentText = document.getElementById("agent-text");
+    const pdfSection = document.getElementById("pdf-section");
+    const hinweisContainer = document.getElementById("hinweis-container");
+    const losGehtsBtn = document.getElementById("los-gehts-btn");
+    const agentInputDiv = document.getElementById("agent-input");
+
+    let currentIndex = 0;
+    let chatStarted = false;
+
+    // Button erst nach 10 Sekunden anzeigen
+    setTimeout(() => {
+      losGehtsBtn.style.display = 'inline-block';
+    }, 10000);
+
+    losGehtsBtn.addEventListener('click', () => {
+      // Hinweistext und Button ausblenden
+      hinweisContainer.style.display = 'none';
+
+      // Chat und Eingabebereich anzeigen
+      chatContainer.style.display = 'flex';
+      agentInputDiv.style.display = 'block';
+
+      chatStarted = true;
+      showNextMessage();
+    });
+
+    function showNextMessage() {
+      if (!chatStarted) return; // Start nur nach Klick
+
+      if (currentIndex >= messages.length) {
+        pdfSection.style.display = 'block';
+        agentText.disabled = true;
+        document.querySelector('button[onclick="submitAgentReply()"]')?.setAttribute('disabled', true);
+        return;
+      }
+
+      const msg = messages[currentIndex];
+
+      if (msg.from === "bot") {
+        // Warte auf Agentenantwort
+        return;
+      }
+
+      // Benutzer-Nachricht simulieren mit "Tippt..." Anzeige
+      const typingDiv = document.createElement("div");
+      typingDiv.className = "typing";
+      typingDiv.textContent = "Kunde tippt eine Nachricht ein...";
+      chatContainer.appendChild(typingDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      setTimeout(() => {
+        typingDiv.remove();
+
+        const div = document.createElement("div");
+        div.className = `message from-${msg.from} visible`;
+        div.textContent = msg.text;
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        currentIndex++;
+        if (messages[currentIndex] && messages[currentIndex].from === "bot") {
+          // warte auf Agentenantwort
+        } else {
+          setTimeout(showNextMessage, 3000);
+        }
+      }, 5000);
+    }
+
+    function submitAgentReply() {
+      const reply = agentText.value.trim();
+      if (!reply) return;
+
+      const div = document.createElement("div");
+      div.className = "agent-reply";
+      div.textContent = reply;
+      agentReplies.appendChild(div);
+      agentText.value = "";
+
+      const botMessage = messages[currentIndex];
+      const botDiv = document.createElement("div");
+      botDiv.className = "message from-bot visible";
+      botDiv.textContent = botMessage.text;
+      chatContainer.appendChild(botDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      currentIndex++;
+      setTimeout(showNextMessage, 3000);
+    }
+
+    function downloadPDF() {
+      const element = document.body;
+      const opt = {
+        margin:       0.5,
+        filename:     'chatverlauf.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>
